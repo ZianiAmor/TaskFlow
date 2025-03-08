@@ -1,0 +1,124 @@
+/* Login.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+}
+
+.login-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #16171d;
+}
+
+.container {
+  background: #1e1f29;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 340px;
+}
+
+.loginform p {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Input Fields */
+.icon-input {
+  display: flex;
+  align-items: center;
+  background: #282a36;
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid #393c4a;
+  transition: border 0.3s;
+}
+
+.icon-input:hover {
+  border-color: #5c5f70;
+}
+
+.icon {
+  background: none;
+  border: none;
+  font-size: 0.85rem; /* Reduced size */
+  color: #b0b3c1;
+  margin-right: 0.5rem; /* Adjusted spacing */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2rem; /* Ensures uniform size */
+  height: 1.2rem;
+}
+
+
+.enter {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.95rem;
+  color: #ffffff;
+}
+
+/* Button */
+.button {
+  margin-top: 1rem;
+}
+
+.login {
+  width: 100%;
+  padding: 0.85rem;
+  border: none;
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: #fff;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s;
+  font-weight: 500;
+}
+
+.login:hover {
+  background: linear-gradient(135deg, #008cff, #0062cc);
+  transform: translateY(-2px);
+  box-shadow: 0px 4px 12px rgba(0, 123, 255, 0.4);
+}
+
+/* Error Message */
+.error-message {
+  color: #e44c4c;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+/* Signup */
+.signup p {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: #b0b3c1;
+  text-align: center;
+}
+
+.signup a {
+  color: #008cff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.signup a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
