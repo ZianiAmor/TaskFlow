@@ -125,7 +125,7 @@
 
 .participants-list {
   font-size: 0.8rem;
-  color: #64748b;
+  color: white;
   margin-top: 0.5rem;
   padding-top: 0.5rem;
   border-top: 1px solid #e2e8f0;
@@ -442,17 +442,17 @@
   color: #93c5fd;
 }
 
-.comment-txt {
-  color: #334155;
-}
+/*.comment-txt {
+ color: #334155;
+}*/
 
 .message.own .comment-txt {
   color: #e2e8f0;
 }
 
-.notes-txt {
+/*.notes-txt {
   color: #1e293b;
-}
+}*/
 
 .message.own .notes-txt {
   color: #f8fafc;

@@ -116,7 +116,10 @@ const saveProgress = async (req, res) => {
     if (!foundToday) {
       task.progress.push({ day: new Date(), hours: additionalHours });
     }
-    task.timer = timer;
+    if (task.progress.length > 7) {
+      task.progress = task.progress.slice(-7);
+    }
+    task.timer = 0;
     await task.save();
     res.status(200).json(task);
   } catch (error) {

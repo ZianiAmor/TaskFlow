@@ -110,8 +110,48 @@ const Project = () => {
 
   const chartOptions = {
     scales: {
-      y: { min: 0, max: 10 },
+      y: { 
+        min: 0, 
+        max: 10,
+        title: {
+          display: true,
+          text: 'Hours'
+        },
+        grid: {
+          color: 'rgba(200, 200, 200, 0.3)'
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        }
+      }
     },
+    plugins: {
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return `${context.parsed.y} hours`;
+          }
+        }
+      },
+      legend: {
+        display: false  // Hide legend since we only have one dataset
+      }
+    },
+    elements: {
+      line: {
+        tension: 0.3 // Add subtle curve to lines
+      },
+      point: {
+        radius: 4,
+        hoverRadius: 6
+      }
+    },
+    animation: {
+      duration: 800,
+      easing: 'easeOutQuart'
+    }
   };
 
   const handleSaveProgress = async (projectId) => {
@@ -123,6 +163,7 @@ const Project = () => {
       );
       alert("Progress saved!");
       document.getElementById('session').innerHTML = 'Last Session Duration : ';
+      
     } catch (error) {
       console.error("Error saving progress:", error);
       alert("Error saving progress");

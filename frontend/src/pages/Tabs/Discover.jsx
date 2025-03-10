@@ -33,7 +33,7 @@ const Discover = () => {
     "hiking", "walking", "jogging", "running", "cycling", "swimming", 
     "camping", "kayaking", "fishing", "climbing", "yoga", "surfing",
     "skiing", "snowboarding", "gardening", "picnic", "barbecue","visit","visiting",
-    "walk","going",
+    "walk","going","workout",
     // Locations
     "park", "beach", "trail", "lake", "forest", "mountain", "river",
     "garden", "playground", "pool", "campsite", "zoo", "farm","hangout",
