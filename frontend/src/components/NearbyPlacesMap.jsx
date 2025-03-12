@@ -1,9 +1,12 @@
+// frontend/src/components/NearbyPlacesMap.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import axiosInstance from './../services/api';
-import './NearbyPlacesMap.css'
+import './NearbyPlacesMap.css';
+import { isOutdoorActivity, requiresMapDisplay, determineActivityType } from '../utils/taskUtils';
+
 // Fix for Leaflet marker icons in React
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -21,76 +24,15 @@ const NearbyPlacesMap = () => {
   const [tasks, setTasks] = useState([]);
   const mapRef = useRef(null);
   
-  // API Key from your account
+  // Geoapify API Key
   const GEOAPIFY_API_KEY = "6062757cbcd5409db1ffac268053fb89";
 
-  // Get user area from localStorage
-  const userRegion = JSON.parse(localStorage.getItem("user"))?.area || "";
-
-  // The same outdoor activity detection function 
-  const outdoorKeywords = [
-    "hiking", "walking", "jogging", "running", "cycling", "swimming", "camping", 
-    "kayaking", "fishing", "climbing", "yoga", "surfing", "skiing", "snowboarding", 
-    "gardening", "picnic", "barbecue", "visit", "visiting", "walk", "going", 
-    "workout", "shopping", "park", "beach", "trail", "lake", "forest", "mountain", 
-    "river", "garden", "playground", "pool", "campsite", "zoo", "farm", "hangout", 
-    "gym", "tennis", "golf", "soccer", "volleyball", "basketball", "baseball", 
-    "skateboarding", "badminton", "training", "bootcamp", "birdwatching", "stargazing", 
-    "photography", "foraging", "bonfire", "sunset", "sunrise", "wildlife", "nature walk", 
-    "scenic drive", "boating", "rafting", "snorkeling", "paddleboarding", "sailing", 
-    "diving", "tubing", "waterskiing", "jet skiing", "kitesurfing", "sledding", 
-    "ice skating", "snowshoeing", "leaf peeping"
-  ];
-
-  // Map category names to Geoapify category values
-  const categoryMapping = {
-    supermarket: "commercial.supermarket",
-    gym: "sport.fitness",
-    park: "leisure.park",
-    restaurant: "catering.restaurant",
-    cafe: "catering.cafe",
-    leisure: "leisure"
-  };
-
-  // Define location-based activities that would benefit from a map
-  const mapRelevantActivities = ["shopping", "gym", "park", "restaurant", "cafe", "mall", "fitness", 
-                                "workout", "sports", "pool", "tennis", "golf", "basketball", 
-                                "soccer", "beach", "lake", "cinema", "theater", "museum"];
-
-  function isOutdoorActivity(taskName) {
-    const pattern = `\\b(${outdoorKeywords.join("|")})\\b`;
-    const regex = new RegExp(pattern, "i");
-    return regex.test(taskName);
-  }
-
-  function determineActivityType(taskName) {
-    const lowerTaskName = taskName.toLowerCase();
-    
-    if (lowerTaskName.includes("shop") || lowerTaskName.includes("mall") || lowerTaskName.includes("market")) {
-      return "supermarket";
-    } else if (lowerTaskName.includes("gym") || lowerTaskName.includes("fitness") || lowerTaskName.includes("workout")) {
-      return "gym";
-    } else if (lowerTaskName.includes("park") || lowerTaskName.includes("garden")) {
-      return "park";
-    } else if (lowerTaskName.includes("restaurant") || lowerTaskName.includes("eat") || lowerTaskName.includes("dining")) {
-      return "restaurant";
-    } else if (lowerTaskName.includes("cafe") || lowerTaskName.includes("coffee")) {
-      return "cafe";
-    } else {
-      return "leisure";
-    }
-  }
-
-  // Check if an activity requires map display
-  function requiresMapDisplay(taskName) {
-    const lowerTaskName = taskName.toLowerCase();
-    return mapRelevantActivities.some(activity => lowerTaskName.includes(activity));
-  }
+  // Get user region from localStorage; note the property is "region", not "area"
+  const userRegion = JSON.parse(localStorage.getItem("user"))?.region || "";
 
   // Convert region name to geocoordinates using Geoapify Geocoding API
   const geocodeRegion = async (region) => {
     try {
-      // Using the exact geocoding API URL format you provided
       const geocodingUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(region)}&apiKey=${GEOAPIFY_API_KEY}`;
       console.log("Geocoding API URL:", geocodingUrl);
       
@@ -99,10 +41,7 @@ const NearbyPlacesMap = () => {
       
       if (data.features && data.features.length > 0) {
         const coordinates = data.features[0].geometry.coordinates;
-        return {
-          lon: coordinates[0],
-          lat: coordinates[1]
-        };
+        return { lon: coordinates[0], lat: coordinates[1] };
       }
       throw new Error("Location not found");
     } catch (err) {
@@ -113,21 +52,27 @@ const NearbyPlacesMap = () => {
     }
   };
 
-  // Fetch nearby places using Geoapify Places API
+  // Fetch nearby places using Geoapify Places API with a category mapping
   const fetchNearbyPlaces = async (lat, lon, category) => {
     try {
-      const categoryParam = categoryMapping[category] || "leisure";
-      
-      // Create bounding box for the area (5km around the point)
+      // Map our activity types to Geoapify-supported categories
+      const categoryMapping = {
+        default: "leisure",
+        supermarket: "commercial.supermarket",
+        gym: "leisure.sports_centre",
+        restaurant: "catering.restaurant",
+        cafe: "catering.cafe",
+        motel: "accommodation.motel"
+      };
+      const categoryParam = categoryMapping[category] || category;
       const radius = 0.045; // Approximately 5km in degrees
-      const bbox = {
-        west: lon - radius,
-        south: lat - radius,
-        east: lon + radius,
-        north: lat + radius
+      const bbox = { 
+        west: lon - radius, 
+        south: lat - radius, 
+        east: lon + radius, 
+        north: lat + radius 
       };
       
-      // Using the exact places API URL format you provided with rect filter
       const placesUrl = `https://api.geoapify.com/v2/places?categories=${categoryParam}&filter=rect%3A${bbox.west}%2C${bbox.north}%2C${bbox.east}%2C${bbox.south}&limit=20&apiKey=${GEOAPIFY_API_KEY}`;
       console.log("Places API URL:", placesUrl);
       
@@ -152,7 +97,7 @@ const NearbyPlacesMap = () => {
     }
   };
 
-  // Fetch tasks
+  // Fetch tasks and determine activity type
   useEffect(() => {
     const fetchTasks = async () => {
       try {
@@ -165,8 +110,6 @@ const NearbyPlacesMap = () => {
         }));
         
         setTasks(tasksWithOutdoor);
-        
-        // Find the first task that requires a map
         const mapTask = tasksWithOutdoor.find(task => task.requiresMap);
         if (mapTask) {
           setActivityType(mapTask.activityType);
@@ -176,7 +119,6 @@ const NearbyPlacesMap = () => {
         setError("Failed to load your tasks. Please try again.");
       }
     };
-    
     fetchTasks();
   }, []);
 
@@ -184,15 +126,10 @@ const NearbyPlacesMap = () => {
   useEffect(() => {
     const initMap = async () => {
       if (!userRegion || !activityType) return;
-      
       setLoading(true);
       setError(null);
-      
       try {
-        // For Algeria, you might want to add the country to improve geocoding results
-        const regionWithCountry = userRegion.includes("Algeria") ? userRegion : `${userRegion}, Algeria`;
-        const location = await geocodeRegion(regionWithCountry);
-        
+        const location = await geocodeRegion(userRegion);
         if (location) {
           setUserLocation(location);
           const places = await fetchNearbyPlaces(location.lat, location.lon, activityType);
@@ -205,15 +142,11 @@ const NearbyPlacesMap = () => {
         setLoading(false);
       }
     };
-    
     initMap();
   }, [userRegion, activityType]);
 
-  // Default center location for Algeria if user location fails
-  const defaultCenter = [28.0339, 1.6596]; // Center of Algeria
+  const defaultCenter = [28.0339, 1.6596]; // Fallback center (Algeria)
   const mapCenter = userLocation ? [userLocation.lat, userLocation.lon] : defaultCenter;
-  
-  // Find tasks that require map display
   const mapRequiringTasks = tasks.filter(task => task.requiresMap);
 
   return (
@@ -233,48 +166,36 @@ const NearbyPlacesMap = () => {
       )}
 
       {error && <div className="error-message">{error}</div>}
-      
       {loading && <div className="loading">Loading map and nearby places...</div>}
       
       {!loading && userLocation && activityType && (
         <div className="map-container" style={{ height: "500px", width: "100%" }}>
-          <MapContainer 
-            center={mapCenter}
-            zoom={13} 
-            style={{ height: "100%", width: "100%" }}
-            ref={mapRef}
-          >
+          <MapContainer center={mapCenter} zoom={13} style={{ height: "100%", width: "100%" }} ref={mapRef}>
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
-            
-            {/* User location marker */}
             <Marker position={[userLocation.lat, userLocation.lon]}>
               <Popup>
-                <strong>Your location</strong><br />
-                Based on: {userRegion}
+                <strong>Your location</strong><br />Based on: {userRegion}
               </Popup>
             </Marker>
-            
-            {/* Nearby places markers */}
             {nearbyPlaces.map(place => (
               <Marker key={place.id} position={[place.lat, place.lon]}>
                 <Popup>
-                  <strong>{place.name}</strong><br />
-                  {place.address}
+                  <strong>{place.name}</strong><br />{place.address}
                 </Popup>
               </Marker>
             ))}
           </MapContainer>
-          
           <div className="places-list">
-            <h3>Nearby {activityType === "supermarket" ? "Shopping Places" : 
-                       activityType === "gym" ? "Fitness Centers" : 
-                       activityType === "restaurant" ? "Restaurants" : 
-                       activityType === "cafe" ? "Cafes" : 
-                       "Places"}</h3>
-            
+            <h3>
+              {activityType === "supermarket" ? "Shopping Places" : 
+              activityType === "gym" ? "Fitness Centers" : 
+              activityType === "restaurant" ? "Restaurants" : 
+              activityType === "cafe" ? "Cafes" : 
+              activityType === "motel" ? "Accommodation" : "Places"}
+            </h3>
             {nearbyPlaces.length > 0 ? (
               <ul className="places">
                 {nearbyPlaces.map(place => (

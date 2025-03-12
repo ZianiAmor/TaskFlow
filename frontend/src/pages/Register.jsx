@@ -21,7 +21,9 @@ const Register = () => {
         const userData = {
           _id: response.data.user._id,
           username: response.data.user.username,
-          token: response.data.token
+          token: response.data.token,
+          region: response.data.user.region  // include the region
+
         };
         localStorage.setItem('user', JSON.stringify(userData));
         navigate('/dashboard');
