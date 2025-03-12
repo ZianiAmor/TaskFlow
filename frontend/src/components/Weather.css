@@ -1,0 +1,55 @@
+.weather-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.weather-card h3 {
+    margin: 0 0 20px 0;
+    color: #2d3436;
+    font-size: 1.4rem;
+}
+
+.hourly-forecast {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+}
+
+.hour {
+    flex: 0 0 120px;
+    text-align: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.hour p {
+    margin: 8px 0;
+    font-weight: 500;
+    color: #2d3436;
+}
+
+.hour small {
+    display: block;
+    color: #636e72;
+    font-size: 0.8rem;
+    margin-top: 8px;
+}
+
+.hour svg {
+    font-size: 2rem;
+    margin: 10px 0;
+    color: #0984e3;
+}
+
+.weather-error {
+    padding: 15px;
+    background: #ffe3e3;
+    color: #d32f2f;
+    border-radius: 8px;
+    margin: 20px 0;
+}

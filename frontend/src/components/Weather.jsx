@@ -3,35 +3,38 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { WiDaySunny, WiRain, WiCloudy } from 'react-icons/wi';
 import { Spinner } from './common/Spinner';
+import './Weather.css';
 
 const Weather = ({ region, tasks }) => {
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Get time window for weather forecast
+  // Get time window for weather forecast based on task deadlines
   const getForecastHours = () => {
     const now = new Date();
-    return tasks
-      .filter(task => task.isOutdoor)
+    const hours = tasks
+      .filter(task => task.isOutdoor && task.deadline)
       .map(task => new Date(task.deadline).getHours())
       .filter(h => h > now.getHours())
-      .slice(0, 6); // Get next 6 relevant hours
+      .slice(0, 6);
+    return hours;
   };
 
   useEffect(() => {
     const fetchWeather = async () => {
       try {
-        // Use the provided OpenWeatherMap API key:
         const response = await axios.get(
           `https://api.openweathermap.org/data/2.5/forecast?q=${region}&units=metric&appid=2bdefad800398800a09c6265db5a7172`
         );
-        
-        const relevantHours = getForecastHours();
-        const filteredForecast = response.data.list.filter(item => 
-          relevantHours.includes(new Date(item.dt * 1000).getHours())
+        const forecastHours = getForecastHours();
+        let filteredForecast = response.data.list.filter(item =>
+          forecastHours.includes(new Date(item.dt * 1000).getHours())
         );
-
+        // Fallback: if no forecast matches tasks, show the first 6 items
+        if (filteredForecast.length === 0) {
+          filteredForecast = response.data.list.slice(0, 6);
+        }
         setWeather({ ...response.data, list: filteredForecast });
       } catch (error) {
         setError(error.response?.data?.message || error.message);
@@ -54,11 +57,11 @@ const Weather = ({ region, tasks }) => {
         {weather.list.map((item, index) => (
           <div key={index} className="hour">
             <p>{new Date(item.dt * 1000).getHours()}:00</p>
-            {item.weather[0].main === 'Clear' ? <WiDaySunny /> :
-             item.weather[0].main === 'Rain' ? <WiRain /> : <WiCloudy />}
+            {item.weather[0].main === 'Clear' ? <WiDaySunny size={32} /> :
+             item.weather[0].main === 'Rain' ? <WiRain size={32} /> : <WiCloudy size={32} />}
             <p>{Math.round(item.main.temp)}°C</p>
             <small>
-              {tasks.filter(t => 
+              {tasks.filter(t =>
                 new Date(t.deadline).getHours() === new Date(item.dt * 1000).getHours()
               ).map(t => t.name).join(', ')}
             </small>

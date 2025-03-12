@@ -1,65 +1,71 @@
-/*NearbyPlacesMap.css*/
 .nearby-places-container {
-    margin: 20px 0;
-    padding: 15px;
-    background-color: #f5f7fa;
-    border-radius: 8px;
-  }
-  
-  .map-container {
-    margin: 15px 0;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  .loading {
-    padding: 20px;
-    text-align: center;
-    color: #666;
-  }
-  
-  .error-message {
-    padding: 10px;
-    background-color: #fee;
-    border-left: 4px solid #f56565;
-    margin: 10px 0;
-  }
-  
-  .warning-message {
-    padding: 10px;
-    background-color: #fffde7;
-    border-left: 4px solid #ffca28;
-    margin: 10px 0;
-  }
-  
-  .places-list {
-    margin-top: 20px;
-  }
-  
-  .places {
-    list-style: none;
-    padding: 0;
-  }
-  
-  .place-item {
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-  }
-  
-  .place-item h4 {
-    margin: 0 0 5px 0;
-  }
-  
-  .place-item p {
-    margin: 0;
-    color: #666;
-    font-size: 0.9em;
-  }
-  
-  .activity-info {
-    padding: 10px;
-    background-color: #e6f7ff;
-    border-left: 4px solid #1890ff;
-    margin-bottom: 15px;
-  }
+  margin: 20px 0;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.map-container {
+  margin: 20px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  height: 600px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.leaflet-container {
+  height: 100%;
+  border-radius: 8px;
+}
+
+.places-list {
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  overflow-y: auto;
+}
+
+.places {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.place-item {
+  padding: 15px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.place-item h4 {
+  margin: 0 0 8px 0;
+  color: #2d3436;
+  font-size: 1.1rem;
+}
+
+.place-item p {
+  margin: 0;
+  color: #636e72;
+  font-size: 0.9rem;
+}
+
+.loading {
+  padding: 30px;
+  text-align: center;
+  font-size: 1.2rem;
+  color: #636e72;
+}
+
+.error-message {
+  padding: 15px;
+  background-color: #ffe3e3;
+  color: #d32f2f;
+  border-radius: 8px;
+  margin: 15px 0;
+}
