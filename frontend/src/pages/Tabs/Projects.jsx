@@ -52,7 +52,6 @@ const Stopwatch = forwardRef(({ initialTime = 0 }, ref) => {
   const reset = () => {
     setIsRunning(false);
     clearInterval(intervalRef.current);
-    document.getElementById('session').innerHTML = 'Session duration : ';
     setTime(0);
   };
 
@@ -162,7 +161,6 @@ const Project = () => {
         prev.map((project) => (project._id === projectId ? response.data : project))
       );
       alert("Progress saved!");
-      document.getElementById('session').innerHTML = 'Last Session Duration : ';
       
     } catch (error) {
       console.error("Error saving progress:", error);
@@ -172,9 +170,9 @@ const Project = () => {
 
   const updateNoteInput = (projectId, field, value, noteIndex = null) => {
     setNoteInputs((prev) => {
-      const projectInputs = prev[projectId] || { newNoteHeader: "", newComment: {} };
+      const projectInputs = prev[projectId] || { newNoteHeader: "", newComment: {} }; // so the projectInput would have the previous state of a the note section or we end up with an initialization
       if (field === "newNoteHeader") {
-        return { ...prev, [projectId]: { ...projectInputs, newNoteHeader: value } };
+        return { ...prev, [projectId]/*to access a specidic project in the object*/ : { ...projectInputs, newNoteHeader: value /*update the content of the targeted project */} };
       } else if (field === "newComment") {
         const updatedComments = { ...projectInputs.newComment, [noteIndex]: value };
         return { ...prev, [projectId]: { ...projectInputs, newComment: updatedComments } };
@@ -189,7 +187,7 @@ const Project = () => {
     setProjects((prev) =>
       prev.map((project) => {
         if (project._id === projectId) {
-          const updatedNotes = project.notes ? [...project.notes, { header, comments: [] }] : [{ header, comments: [] }];
+          const updatedNotes = project.notes ?/*whether the notes array of the targeted project is null or not */ [...project.notes, { header, comments: [] }] : [{ header, comments: [] }]; // handeling the 2 cases , if there is already headers and we want to add one or just create the first header
           return { ...project, notes: updatedNotes };
         }
         return project;
@@ -289,7 +287,7 @@ const Project = () => {
               </div>
               <div className="stopwatch-section">
                 <h3 id="session">Session Duration :</h3>
-                <Stopwatch ref={stopwatchRefs.current[project._id]} initialTime={project.timer || 0} />
+                <Stopwatch ref={stopwatchRefs.current[project._id]} initialTime={ 0} />
                 <button className="btn btn-primary save-progress-btn" onClick={() => handleSaveProgress(project._id)}>
                   Save Progress
                 </button>

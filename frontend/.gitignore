@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+node_modules/
+# Ignore sensitive config files
+.env
+config.json

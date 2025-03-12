@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 
 const Register = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, region } = req.body;
     
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -15,13 +15,17 @@ const Register = async (req, res) => {
     }
 
     const salt = await bcrypt.genSalt(10);
-const hashedPassword = await bcrypt.hash(password, salt);
-const newUser = new User({ username, email, password: hashedPassword });
-await newUser.save();
+    const hashedPassword = await bcrypt.hash(password, salt);
+    const newUser = new User({ username, email, password: hashedPassword, region });
+    await newUser.save();
+
+    // Generate a token for the new user
+    const token = jwt.sign({ _id: newUser._id }, process.env.JWT_KEY, { expiresIn: "10d" });
 
     res.status(201).json({ 
       success: true, 
-      user: { _id: newUser._id, username } 
+      token,
+      user: { _id: newUser._id, username, region: newUser.region } 
     });
   } catch (error) {
     console.error(error);
@@ -59,7 +63,7 @@ const Login = async (req, res) => {
     res.status(200).json({ 
       success: true, 
       token,
-      user: { _id: user._id, username: user.username }
+      user: { _id: user._id, username: user.username, region: user.region }
     });
   } catch (error) {
     console.error(error);

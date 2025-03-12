@@ -2,6 +2,11 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
+  region: {
+    type: String,
+    required: true,
+    default: 'London' // Set appropriate default
+  },
   username: {
     type: String, 
     required: true,

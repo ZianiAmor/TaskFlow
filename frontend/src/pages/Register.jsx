@@ -1,3 +1,4 @@
+//frontend/src/pages/Register.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../services/api';
@@ -7,13 +8,14 @@ const Register = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const[region,setRegion]=useState("")
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axiosInstance.post('/api/auth/register', { username, email, password });
+      const response = await axiosInstance.post('/api/auth/register', { username, email, password,region });
   
       if (response.data.success) {
         const userData = {
@@ -54,6 +56,17 @@ const Register = () => {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
+              <div className="icon-input">
+              <button className="icon"><i className='bx bxs-map'></i></button>
+              <input
+                type="text"
+                className="enter"
+                placeholder="Region (e.g. London)"
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                required
+              />
+            </div>
             </div>
             {error && <div className="error-message">{error}</div>}
             <div className="button">

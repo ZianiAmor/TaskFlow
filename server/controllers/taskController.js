@@ -94,12 +94,11 @@ const deleteTask = async (req, res) => {
   }
 };
 
-// saveProgress updates the task's timer and accumulates progress for today.
 const saveProgress = async (req, res) => {
   try {
     const { id } = req.params;
-    const { timer } = req.body; // current stopwatch time in seconds
-    const additionalHours = timer / 3600; // convert seconds to hours
+    const { timer } = req.body; 
+    const additionalHours = timer / 3600;
     const task = await Task.findById(id);
     if (!task) {
       return res.status(404).json({ success: false, error: 'Task not found' });
