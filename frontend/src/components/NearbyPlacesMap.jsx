@@ -10,9 +10,12 @@ import { isOutdoorActivity, requiresMapDisplay, determineActivityType } from '..
 // Fix for Leaflet marker icons in React
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconRetinaUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
 const NearbyPlacesMap = () => {
@@ -23,22 +26,20 @@ const NearbyPlacesMap = () => {
   const [activityType, setActivityType] = useState(null);
   const [tasks, setTasks] = useState([]);
   const mapRef = useRef(null);
-  
+
   // Geoapify API Key
   const GEOAPIFY_API_KEY = "6062757cbcd5409db1ffac268053fb89";
 
-  // Get user region from localStorage; note the property is "region", not "area"
-  const userRegion = JSON.parse(localStorage.getItem("user"))?.region || "";
+  // Stored region from localStorage (fallback)
+  const storedRegion = JSON.parse(localStorage.getItem("user"))?.region || "";
 
-  // Convert region name to geocoordinates using Geoapify Geocoding API
+  // Convert a region name to geocoordinates using Geoapify Geocoding API
   const geocodeRegion = async (region) => {
     try {
       const geocodingUrl = `https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(region)}&apiKey=${GEOAPIFY_API_KEY}`;
       console.log("Geocoding API URL:", geocodingUrl);
-      
       const response = await fetch(geocodingUrl);
       const data = await response.json();
-      
       if (data.features && data.features.length > 0) {
         const coordinates = data.features[0].geometry.coordinates;
         return { lon: coordinates[0], lat: coordinates[1] };
@@ -52,33 +53,52 @@ const NearbyPlacesMap = () => {
     }
   };
 
+  // Try to get user's current location via browser geolocation
+  const fetchUserLocation = () => {
+    return new Promise((resolve, reject) => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              lat: position.coords.latitude,
+              lon: position.coords.longitude
+            });
+          },
+          (err) => {
+            console.warn("Geolocation error:", err);
+            reject(err);
+          }
+        );
+      } else {
+        reject(new Error("Geolocation not supported"));
+      }
+    });
+  };
+
   // Fetch nearby places using Geoapify Places API with a category mapping
   const fetchNearbyPlaces = async (lat, lon, category) => {
     try {
-      // Map our activity types to Geoapify-supported categories
       const categoryMapping = {
         default: "leisure",
         supermarket: "commercial.supermarket",
-        gym: "leisure.sports_centre",
+        gym: "sport.fitness.fitness_centre", // Mapping for fitness centers
         restaurant: "catering.restaurant",
         cafe: "catering.cafe",
         motel: "accommodation.motel"
       };
       const categoryParam = categoryMapping[category] || category;
       const radius = 0.045; // Approximately 5km in degrees
-      const bbox = { 
-        west: lon - radius, 
-        south: lat - radius, 
-        east: lon + radius, 
-        north: lat + radius 
+      const bbox = {
+        west: lon - radius,
+        south: lat - radius,
+        east: lon + radius,
+        north: lat + radius
       };
-      
+
       const placesUrl = `https://api.geoapify.com/v2/places?categories=${categoryParam}&filter=rect%3A${bbox.west}%2C${bbox.north}%2C${bbox.east}%2C${bbox.south}&limit=20&apiKey=${GEOAPIFY_API_KEY}`;
       console.log("Places API URL:", placesUrl);
-      
       const response = await fetch(placesUrl);
       const data = await response.json();
-      
       if (data.features) {
         return data.features.map(place => ({
           id: place.properties.place_id || Math.random().toString(36).substring(2, 15),
@@ -97,18 +117,17 @@ const NearbyPlacesMap = () => {
     }
   };
 
-  // Fetch tasks and determine activity type
+  // Fetch tasks and determine the activity type from task names
   useEffect(() => {
     const fetchTasks = async () => {
       try {
         const response = await axiosInstance.get("http://localhost:5000/api/tasks");
-        const tasksWithOutdoor = response.data.map((task) => ({
+        const tasksWithOutdoor = response.data.map(task => ({
           ...task,
           isOutdoor: isOutdoorActivity(task.name),
           requiresMap: requiresMapDisplay(task.name),
           activityType: determineActivityType(task.name)
         }));
-        
         setTasks(tasksWithOutdoor);
         const mapTask = tasksWithOutdoor.find(task => task.requiresMap);
         if (mapTask) {
@@ -122,14 +141,21 @@ const NearbyPlacesMap = () => {
     fetchTasks();
   }, []);
 
-  // Geocode user region and fetch nearby places when activityType changes
+  // Determine user location using geolocation first, then fallback to geocoding stored region
   useEffect(() => {
     const initMap = async () => {
-      if (!userRegion || !activityType) return;
+      if (!storedRegion || !activityType) return;
       setLoading(true);
       setError(null);
       try {
-        const location = await geocodeRegion(userRegion);
+        let location;
+        try {
+          location = await fetchUserLocation();
+          console.log("Using browser geolocation:", location);
+        } catch (geoError) {
+          console.warn("User denied geolocation or it failed; falling back to stored region.");
+          location = await geocodeRegion(storedRegion);
+        }
         if (location) {
           setUserLocation(location);
           const places = await fetchNearbyPlaces(location.lat, location.lon, activityType);
@@ -143,9 +169,9 @@ const NearbyPlacesMap = () => {
       }
     };
     initMap();
-  }, [userRegion, activityType]);
+  }, [storedRegion, activityType]);
 
-  const defaultCenter = [28.0339, 1.6596]; // Fallback center (Algeria)
+  const defaultCenter = [28.0339, 1.6596]; // Fallback center if no location is found
   const mapCenter = userLocation ? [userLocation.lat, userLocation.lon] : defaultCenter;
   const mapRequiringTasks = tasks.filter(task => task.requiresMap);
 
@@ -155,7 +181,7 @@ const NearbyPlacesMap = () => {
       
       {mapRequiringTasks.length > 0 ? (
         <div className="activity-info">
-          <p>We found activities that might need location info: 
+          <p>We found activities that might need location info:
             <strong> {mapRequiringTasks.map(task => task.name).join(", ")}</strong>
           </p>
         </div>
@@ -177,7 +203,7 @@ const NearbyPlacesMap = () => {
             />
             <Marker position={[userLocation.lat, userLocation.lon]}>
               <Popup>
-                <strong>Your location</strong><br />Based on: {userRegion}
+                <strong>Your location</strong><br />Based on: {storedRegion}
               </Popup>
             </Marker>
             {nearbyPlaces.map(place => (
@@ -190,11 +216,11 @@ const NearbyPlacesMap = () => {
           </MapContainer>
           <div className="places-list">
             <h3>
-              {activityType === "supermarket" ? "Shopping Places" : 
-              activityType === "gym" ? "Fitness Centers" : 
-              activityType === "restaurant" ? "Restaurants" : 
-              activityType === "cafe" ? "Cafes" : 
-              activityType === "motel" ? "Accommodation" : "Places"}
+              {activityType === "supermarket" ? "Shopping Places" :
+               activityType === "gym" ? "Fitness Centers" :
+               activityType === "restaurant" ? "Restaurants" :
+               activityType === "cafe" ? "Cafes" :
+               activityType === "motel" ? "Accommodation" : "Places"}
             </h3>
             {nearbyPlaces.length > 0 ? (
               <ul className="places">
@@ -212,7 +238,7 @@ const NearbyPlacesMap = () => {
         </div>
       )}
       
-      {!userRegion && (
+      {!storedRegion && (
         <div className="warning-message">
           <p>No region information found in your profile. Please update your profile with your location.</p>
         </div>
