@@ -28,21 +28,28 @@
   color: #636e72;
 }
 
+.weather-section {
+  margin-bottom: 40px;
+}
+
+.map-section {
+  margin-bottom: 40px;
+}
+
 @media (min-width: 768px) {
   .discover-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 30px;
-      align-items: start;
+      display: block;
       padding: 40px;
   }
   
   .weather-section {
-      position: sticky;
-      top: 30px;
+      position: static;
+      max-width: 800px;
+      margin: 0 auto 40px;
   }
   
   .map-section {
-      grid-column: span 2;
+      max-width: 1200px;
+      margin: 0 auto;
   }
 }

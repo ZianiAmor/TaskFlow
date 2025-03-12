@@ -60,11 +60,6 @@ const Weather = ({ region, tasks }) => {
             {item.weather[0].main === 'Clear' ? <WiDaySunny size={32} /> :
              item.weather[0].main === 'Rain' ? <WiRain size={32} /> : <WiCloudy size={32} />}
             <p>{Math.round(item.main.temp)}°C</p>
-            <small>
-              {tasks.filter(t =>
-                new Date(t.deadline).getHours() === new Date(item.dt * 1000).getHours()
-              ).map(t => t.name).join(', ')}
-            </small>
           </div>
         ))}
       </div>

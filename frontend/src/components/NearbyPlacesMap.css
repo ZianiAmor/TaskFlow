@@ -12,10 +12,27 @@
   overflow: hidden;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   height: 600px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 20px;
 }
+
+@media (min-width: 992px) {
+  .map-container {
+      flex-direction: row;
+  }
+  
+  .leaflet-container {
+      flex: 2;
+  }
+  
+  .places-list {
+      flex: 1;
+      max-height: 600px;
+  }
+}
+
+/* Keep the rest of NearbyPlacesMap.css the same */
 
 .leaflet-container {
   height: 100%;
