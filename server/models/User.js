@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
   region: {
     type: String,
     required: true,
-    default: 'London' // Set appropriate default
+    default: 'Bejaia' // Set appropriate default
   },
   username: {
     type: String, 
@@ -29,18 +29,7 @@ const userSchema = new mongoose.Schema({
       ref: "Task", 
     },
   ],
-  projects: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Project", 
-    },
-  ],
-  friends: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User", 
-    },
-  ],
+ 
   notifications: [
     {
       message: String,
@@ -48,9 +37,7 @@ const userSchema = new mongoose.Schema({
       read: { type: Boolean, default: false },
     },
     
-  ],
-  tasksCompleted: { type: Number, default: 0 },
-  projectsCompleted: { type: Number, default: 0 }
+  ]
 }, { timestamps: true });
 const User = mongoose.model("User", userSchema);
 export default User;

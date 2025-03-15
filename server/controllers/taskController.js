@@ -1,6 +1,7 @@
 // server/controllers/taskController.js
 import Task from '../models/Task.js';
 
+// server/controllers/taskController.js
 const createTask = async (req, res) => {
   try {
     const { name, deadline, duration, isProject } = req.body;
@@ -25,13 +26,34 @@ const createTask = async (req, res) => {
     // Calculate time until deadline in hours
     const timeUntilDeadline = (parsedDeadline - now) / (1000 * 3600);
     
-    // Compute priority using the given formula:
-    // (Duration in hrs * 4 + time until deadline in hrs) / 5 , it can be changed later , maybe
+    // Compute priority using the given formula
     const computedPriority = (durationNum * 4 + timeUntilDeadline) / 5;
     
-    // Promote as a project if duration > 10 or if manually marked.
+    // Promote as a project if duration > 10 or if manually marked
     const promoteAsProject = durationNum > 10 || isProject;
     
+    // Get the most up-to-date statistics
+    const latestStats = await Task.findOne(
+      { user: req.user._id }, 
+      { totalNumOfTasks: 1, tasksCompleted: 1, projectsCompleted: 1 },
+      { sort: { 'createdAt': -1 } }
+    );
+    
+    let statsToSet = {
+      totalNumOfTasks: (latestStats?.totalNumOfTasks || 0) + 1,
+      tasksCompleted: latestStats?.tasksCompleted || 0,
+      projectsCompleted: latestStats?.projectsCompleted || 0
+    };
+    
+    // Update ALL existing task documents with new totalNumOfTasks
+    if (latestStats) {
+      await Task.updateMany(
+        { user: req.user._id },
+        { totalNumOfTasks: statsToSet.totalNumOfTasks }
+      );
+    }
+    
+    // Create new task with updated stats
     const newTask = new Task({
       user: req.user._id,
       name,
@@ -39,6 +61,7 @@ const createTask = async (req, res) => {
       duration: durationNum,
       isProject: promoteAsProject,
       priority: computedPriority,
+      ...statsToSet
     });
     
     await newTask.save();
@@ -48,11 +71,16 @@ const createTask = async (req, res) => {
     res.status(500).json({ success: false, error: 'Server error' });
   }
 };
-
 const getTasks = async (req, res) => {
   try {
-    // Sort tasks in ascending order by priority (lowest priority first) , show ew can show it on list
-    const tasks = await Task.find({ user: req.user._id }).sort({ priority: 1 });
+    const { completed } = req.query;
+    const query = { user: req.user._id };
+    
+    if (completed) {
+      query.completed = completed === 'true';
+    }
+
+    const tasks = await Task.find(query).sort({ priority: 1 });
     res.status(200).json(tasks);
   } catch (error) {
     console.error(error);
@@ -75,6 +103,46 @@ const getProjectTasks = async (req, res) => {
 const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
+    const task = await Task.findById(id);
+    
+    if (!task) {
+      return res.status(404).json({ success: false, error: 'Task not found' });
+    }
+    
+    // If we're marking the task as completed
+    if (req.body.completed === true && !task.completed) {
+      // Get the most up-to-date statistics
+      const latestStats = await Task.findOne(
+        { user: req.user._id }, 
+        { totalNumOfTasks: 1, tasksCompleted: 1, projectsCompleted: 1 },
+        { sort: { 'createdAt': -1 } }
+      );
+      
+      let updatedStats = {
+        totalNumOfTasks: latestStats?.totalNumOfTasks || 0,
+        tasksCompleted: latestStats?.tasksCompleted || 0,
+        projectsCompleted: latestStats?.projectsCompleted || 0
+      };
+      
+      // Update completion counts based on task type
+      if (task.isProject) {
+        updatedStats.projectsCompleted += 1;
+      } else {
+        updatedStats.tasksCompleted += 1;
+      }
+      
+      // Update ALL task documents for this user with the new statistics
+      await Task.updateMany(
+        { user: req.user._id },
+        { 
+          totalNumOfTasks: updatedStats.totalNumOfTasks,
+          tasksCompleted: updatedStats.tasksCompleted,
+          projectsCompleted: updatedStats.projectsCompleted
+        }
+      );
+    }
+    
+    // Now update the specific task with the changes from req.body
     const updatedTask = await Task.findByIdAndUpdate(id, req.body, { new: true });
     res.status(200).json(updatedTask);
   } catch (error) {
@@ -83,9 +151,68 @@ const updateTask = async (req, res) => {
   }
 };
 
+const getLatestTask = async (req, res) => {
+  try {
+    // Get the latest task for this user to get current stats
+    const latestTask = await Task.findOne(
+      { user: req.user._id },
+      { totalNumOfTasks: 1, tasksCompleted: 1, projectsCompleted: 1 },
+      { sort: { 'createdAt': -1 } }
+    );
+    
+    if (!latestTask) {
+      return res.status(200).json({
+        totalNumOfTasks: 0,
+        tasksCompleted: 0,
+        projectsCompleted: 0
+      });
+    }
+    
+    res.status(200).json(latestTask);
+  } catch (error) {
+    console.error('Error in getLatestTask:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+};
+
 const deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
+    
+    // Get the task before deleting it
+    const task = await Task.findById(id);
+    if (!task) {
+      return res.status(404).json({ success: false, error: 'Task not found' });
+    }
+    
+    // Get the most up-to-date statistics
+    const latestStats = await Task.findOne(
+      { user: req.user._id }, 
+      { totalNumOfTasks: 1, tasksCompleted: 1, projectsCompleted: 1 },
+      { sort: { 'createdAt': -1 } }
+    );
+    
+    let updatedStats = {
+      totalNumOfTasks: Math.max(0, (latestStats?.totalNumOfTasks || 0) - 1),
+      tasksCompleted: latestStats?.tasksCompleted || 0,
+      projectsCompleted: latestStats?.projectsCompleted || 0
+    };
+    
+    // If the task was completed, also decrement the completion counter
+    if (task.completed) {
+      if (task.isProject) {
+        updatedStats.projectsCompleted = Math.max(0, updatedStats.projectsCompleted - 1);
+      } else {
+        updatedStats.tasksCompleted = Math.max(0, updatedStats.tasksCompleted - 1);
+      }
+    }
+    
+    // Update ALL task documents for this user with the new statistics
+    await Task.updateMany(
+      { user: req.user._id },
+      updatedStats
+    );
+    
     await Task.findByIdAndDelete(id);
     res.status(200).json({ success: true, message: 'Task deleted' });
   } catch (error) {
@@ -127,4 +254,4 @@ const saveProgress = async (req, res) => {
   }
 };
 
-export { createTask, getTasks, getProjectTasks, updateTask, deleteTask, saveProgress };
+export { getLatestTask ,createTask, getTasks, getProjectTasks, updateTask, deleteTask, saveProgress };

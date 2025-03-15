@@ -8,7 +8,7 @@ import { createAdapter } from "@socket.io/redis-adapter";
 import { createClient } from "redis";
 import chatRoutes from "./routes/chat.js";
 import authRoutes from "./routes/auth.js";
-import taskRouter from "./routes/taskRoutes.js";
+import taskRoutes from "./routes/taskRoutes.js";
 import { verifyTokenSocket } from "./middleware/auth.js";
 import ChatMessage from "./models/ChatMessage.js";
 
@@ -28,7 +28,7 @@ app.use(express.json());
 
 app.use("/api/chat", chatRoutes);
 app.use("/api/auth", authRoutes);
-app.use("/api/tasks", taskRouter);
+app.use("/api/tasks", taskRoutes);
 
 const connectMongoDB = async () => {
   try {

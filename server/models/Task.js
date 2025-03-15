@@ -23,6 +23,21 @@ const TaskSchema = new mongoose.Schema(
         ],
       },
     ],
+    totalNumOfTasks: { 
+      type: Number, 
+      default: 0,
+      min: 0 
+    },
+    tasksCompleted: { 
+      type: Number, 
+      default: 0,
+      min: 0 
+    },
+    projectsCompleted: { 
+      type: Number, 
+      default: 0,
+      min: 0 
+    },
   },
   { timestamps: true }
 );

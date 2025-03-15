@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import axiosInstance from "../../services/api";
 import "./Tasks.css";
-
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 export default function Tasks() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -21,7 +22,8 @@ export default function Tasks() {
 
   const fetchTasks = async () => {
     try {
-      const response = await axiosInstance.get("/api/tasks");
+      // Explicitly request only incomplete tasks
+      const response = await axiosInstance.get("/api/tasks?completed=false");
       setTasks(response.data);
     } catch (error) {
       console.error("Error fetching tasks:", error);
@@ -53,13 +55,19 @@ export default function Tasks() {
   };
 
   const handleComplete = async (taskId) => {
-    try {
-      await axiosInstance.patch(`/api/tasks/${taskId}`, { completed: true });
-      handleDelete(taskId);
-    } catch (error) {
-      console.error("Error completing task:", error);
-    }
-  };
+  try {
+    // Mark the task as complete (if needed for stats)
+    await axiosInstance.patch(`/api/tasks/${taskId}`, { completed: true });
+    // Delete the task from the database
+    // Update local state
+    setTasks(tasks.filter(task => task._id !== taskId));
+    toast.success("Task completed and removed successfully!");
+  } catch (error) {
+    console.error("Error completing task:", error);
+    toast.error("Error completing task");
+  }
+};
+
 
   const handleDelete = async (taskId) => {
     try {

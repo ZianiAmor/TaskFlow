@@ -34,6 +34,11 @@ const Stopwatch = forwardRef(({ initialTime = 0 }, ref) => {
 
   useImperativeHandle(ref, () => ({
     getTime: () => time,
+    reset:()=>{
+      setIsRunning(false);
+      clearInterval(intervalRef.current);
+      setTime(0);
+    }
   }), [time]);
 
   const start = () => {
@@ -161,11 +166,13 @@ const Project = () => {
         prev.map((project) => (project._id === projectId ? response.data : project))
       );
       alert("Progress saved!");
-      
+      stopwatchRefs.current[projectId]?.current?.reset();
+
     } catch (error) {
       console.error("Error saving progress:", error);
       alert("Error saving progress");
     }
+    
   };
 
   const updateNoteInput = (projectId, field, value, noteIndex = null) => {
