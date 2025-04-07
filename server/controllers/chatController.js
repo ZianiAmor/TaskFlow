@@ -1,4 +1,3 @@
-// server/controllers/chatController.js
 import ChatRoom from "../models/ChatRoom.js";
 import ChatMessage from "../models/ChatMessage.js";
 import User from "../models/User.js";
@@ -12,13 +11,28 @@ export const createRoom = async (req, res) => {
     }
     
     // Filter out empty strings
-    const filteredInvites = inviteUsernames?.filter(u => u.trim()) || [];
+    const filteredInvites = Array.isArray(inviteUsernames) 
+      ? inviteUsernames.filter(u => u && u.trim()) 
+      : [];
 
     // Find the invited users by username
     const invitedUsers = await Promise.all(
       filteredInvites.map(username => User.findOne({ username }))
     );
-    const validInvitedUserIds = invitedUsers.filter(u => u).map(u => u._id);
+    
+    // Filter out null results (usernames that don't exist)
+    const validInvitedUserIds = invitedUsers
+      .filter(u => u)
+      .map(u => u._id);
+    
+    // Keep track of which usernames were found/not found
+    const foundUsernames = invitedUsers
+      .filter(u => u)
+      .map(u => u.username);
+    
+    const notFoundUsernames = filteredInvites.filter(username => 
+      !foundUsernames.includes(username)
+    );
 
     // Create room and add both the creator and invited users as participants
     const room = new ChatRoom({
@@ -29,13 +43,20 @@ export const createRoom = async (req, res) => {
 
     await room.save();
     const populatedRoom = await ChatRoom.findById(room._id).populate('participants', 'username');
-    res.status(201).json(populatedRoom);
+    
+    // If some usernames weren't found, include that in the response
+    const response = {
+      ...populatedRoom.toObject(),
+      notFoundUsernames: notFoundUsernames.length > 0 ? notFoundUsernames : undefined
+    };
+    
+    res.status(201).json(response);
   } catch (error) {
     console.error('Error creating room:', error);
     res.status(400).json({ error: error.message });
   }
 };
-// server/controllers/chatController.js
+
 export const deleteRoom = async (req, res) => {
   try {
     const { roomId } = req.params;
@@ -77,15 +98,38 @@ export const addParticipant = async (req, res) => {
   try {
     const { roomId } = req.params;
     const { username } = req.body;
-    const userToAdd = await User.findOne({ username });
-    if (!userToAdd) return res.status(404).json({ error: "User not found" });
-
-    const room = await ChatRoom.findByIdAndUpdate(
-      roomId,
-      { $addToSet: { participants: userToAdd._id } },
-      { new: true }
-    );
-    res.status(200).json(room);
+    
+    // Handle comma-separated usernames
+    const usernames = username.split(',').map(u => u.trim()).filter(u => u);
+    
+    const results = {
+      added: [],
+      notFound: []
+    };
+    
+    for (const name of usernames) {
+      const userToAdd = await User.findOne({ username: name });
+      
+      if (!userToAdd) {
+        results.notFound.push(name);
+        continue;
+      }
+      
+      await ChatRoom.findByIdAndUpdate(
+        roomId,
+        { $addToSet: { participants: userToAdd._id } },
+        { new: true }
+      );
+      
+      results.added.push(name);
+    }
+    
+    const updatedRoom = await ChatRoom.findById(roomId).populate('participants', 'username');
+    
+    res.status(200).json({
+      room: updatedRoom,
+      results
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -140,7 +184,6 @@ export const getRoomMessages = async (req, res) => {
       .sort({ createdAt: 1 })
       .lean();
 
-    console.log("SENDING MESSAGES:", messages.slice(0, 1)); // Log first message
     res.status(200).json(messages);
   } catch (error) {
     console.error("FETCH ERROR:", error);

@@ -4,6 +4,7 @@ import axiosInstance from "../../services/api";
 import "./Tasks.css";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { isOutdoorActivity } from "../../utils/taskUtils"; 
 export default function Tasks() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -97,7 +98,18 @@ export default function Tasks() {
       console.error("Error updating task:", error);
     }
   };
-
+  const checkDeadlineStatus = (deadline) => {
+    const today = new Date();
+    const taskDate = new Date(deadline);
+    
+    // Reset time components to compare dates only
+    today.setHours(0, 0, 0, 0);
+    taskDate.setHours(0, 0, 0, 0);
+  
+    if (taskDate < today) return 'passed';
+    if (taskDate.getTime() === today.getTime()) return 'today';
+    return null;
+  };
   return (
     <div className="tasks-container">
       <div className="task-creation-flow">
@@ -226,6 +238,7 @@ export default function Tasks() {
               exit={{ opacity: 0, x: 50 }}
             >
               {task.isProject && <span className="project-tag">Project</span>}
+              {isOutdoorActivity(task.name) && <span className="project-tag-2">Outdoor</span>}
               {editTaskId === task._id ? (
                 <div className="editMode">
                   <input
@@ -288,7 +301,28 @@ export default function Tasks() {
                       </svg>
                       {task.duration} hours
                     </div>
-                    {new Date(task.deadline) < new Date() && (
+                    {checkDeadlineStatus(task.deadline) === 'today' && (
+                      <div className="task-meta-item deadline-warning">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="orange"
+                          width="24"
+                          height="24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M12 8v4l3 3M12 2a10 10 0 110 20 10 10 0 010-20z"
+                          />
+                        </svg>
+                        <span>Deadline is today!</span>
+                      </div>
+                    )}
+
+                    {checkDeadlineStatus(task.deadline) === 'passed' && (
                       <div className="task-meta-item deadline-passed">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -302,10 +336,10 @@ export default function Tasks() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth="2"
-                            d="M12 8v4l3 3M12 2a10 10 0 110 20 10 10 0 010-20z"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
-                        <span>Deadline is passed</span>
+                        <span>Deadline passed!</span>
                       </div>
                     )}
                   </div>

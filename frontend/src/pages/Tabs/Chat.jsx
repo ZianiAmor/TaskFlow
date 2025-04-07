@@ -1,4 +1,3 @@
-//frontend / src / pages/tabs / Chat.js
 import React, { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import axios from "axios";
@@ -179,7 +178,7 @@ const Chat = ({ user }) => {
       }
     };
 
-    // Always join the room (even if socket isn’t connected yet)
+    // Always join the room (even if socket isn't connected yet)
     if (socketRef.current) {
       socketRef.current.emit("joinRoom", selectedRoom._id);
     }
@@ -196,24 +195,22 @@ const Chat = ({ user }) => {
   }, [messages]);
 
   // Fetch projects
-  // Update the useEffect for fetching projects
-// Update the projects fetch effect to filter on the frontend
-useEffect(() => {
-  if (!user?._id) return;
-  const fetchProjects = async () => {
-    try {
-      const { data } = await axiosInstance.get("/api/tasks", {
-        params: { userId: user._id } // Remove isProject filter from request
-      });
-      // Filter projects on the frontend
-      const projectsOnly = data.filter(task => task.isProject);
-      setProjects(projectsOnly);
-    } catch (error) {
-      console.error("Project fetch error:", error);
-    }
-  };
-  fetchProjects();
-}, [user]);
+  useEffect(() => {
+    if (!user?._id) return;
+    const fetchProjects = async () => {
+      try {
+        const { data } = await axiosInstance.get("/api/tasks", {
+          params: { userId: user._id ,completed:false }
+        });
+        // Filter projects on the frontend
+        const projectsOnly = data.filter(task => task.isProject);
+        setProjects(projectsOnly);
+      } catch (error) {
+        console.error("Project fetch error:", error);
+      }
+    };
+    fetchProjects();
+  }, [user]);
 
   // Check authentication on mount
   useEffect(() => {
@@ -232,13 +229,20 @@ useEffect(() => {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, []);
 
+  // Updated function to handle comma-separated usernames
   const handleCreateRoom = async () => {
     if (!roomName.trim()) return;
     try {
+      // Parse comma-separated usernames into an array and trim whitespace
+      const usernameList = inviteUsername.split(',')
+        .map(username => username.trim())
+        .filter(username => username.length > 0);
+      
       const { data } = await axiosInstance.post("/api/chat/room", {
         name: roomName.trim(),
-        inviteUsernames: inviteUsername.trim() ? [inviteUsername.trim()] : []
+        inviteUsernames: usernameList
       });
+      
       setRooms((prev) => [...prev, data]);
       setRoomName("");
       setInviteUsername("");
@@ -279,6 +283,7 @@ useEffect(() => {
       }
     });
   };
+  
   return (
     <div className="chat-container">
       <div className="connection-status" data-status={connectionStatus}>
@@ -301,7 +306,7 @@ useEffect(() => {
         />
         <input
           type="text"
-          placeholder="Invite Friend"
+          placeholder="Invite Friends (comma-separated: jeff,lina,adam)"
           value={inviteUsername}
           onChange={(e) => setInviteUsername(e.target.value)}
           disabled={!isConnected}

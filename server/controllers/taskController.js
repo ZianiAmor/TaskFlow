@@ -92,7 +92,7 @@ const getTasks = async (req, res) => {
 const getProjectTasks = async (req, res) => {
   try {
     // Also sort project tasks by priority (lowest first)
-    const projects = await Task.find({ user: req.user._id, isProject: true }).sort({ priority: 1 });
+    const projects = await Task.find({ user: req.user._id, isProject: true ,completed : false }).sort({ priority: 1 });
     res.status(200).json(projects);
   } catch (error) {
     console.error(error);

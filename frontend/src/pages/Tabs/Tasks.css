@@ -372,6 +372,7 @@ input:checked + .slider:before {
   font-weight: 500;
 }
 
+
 .loading-state {
   text-align: center;
   padding: 3rem;
@@ -516,7 +517,17 @@ input[type="date"]{
   border-radius: 999px; /* Fully rounded edges */
   font-weight: 500;
 }
-
+.project-tag-2 {
+  position: absolute;
+  top: -10px;
+  right: 16px;
+  background: #eab308;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
 .prev:hover {
   background: linear-gradient(135deg, #fde047, #ca8a04); /* Slightly darker yellow gradient */
   transform: translateY(-2px);
