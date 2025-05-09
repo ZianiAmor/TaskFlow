@@ -5,13 +5,13 @@ const userSchema = new mongoose.Schema({
   region: {
     type: String,
     required: true,
-    default: 'Bejaia' // Set appropriate default
+    default: 'Bejaia' 
   },
   username: {
     type: String, 
     required: true,
     unique: true,
-    trim: true,// this removes spaces at the beginning and the end
+    trim: true,
   },
   email: {
     type: String,

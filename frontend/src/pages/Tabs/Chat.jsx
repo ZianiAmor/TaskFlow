@@ -306,7 +306,7 @@ const Chat = ({ user }) => {
         />
         <input
           type="text"
-          placeholder="Invite Friends (comma-separated: jeff,lina,adam)"
+          placeholder="Invite Friends (comma-separated: adam,ayman,yahia)"
           value={inviteUsername}
           onChange={(e) => setInviteUsername(e.target.value)}
           disabled={!isConnected}

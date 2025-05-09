@@ -80,15 +80,13 @@ const initializeSocketIO = async (pubClient, subClient) => {
       socket.join(roomId);
     });
 
-    // In Socket.IO handler:
 socket.on("chatMessage", async (data, callback) => {
   try {
-    // Validate required fields
+    
     if (!data.roomId || !data.message?.trim()) {
       return callback({ error: "Missing room ID or message" });
     }
 
-    // Save to MongoDB
     const message = new ChatMessage({
       room: data.roomId,
       sender: socket.user._id,
@@ -98,7 +96,6 @@ socket.on("chatMessage", async (data, callback) => {
 
     const savedMessage = await message.save();
     
-    // Populate sender details
     const fullMessage = await ChatMessage.findById(savedMessage._id)
     .populate({
       path: "sender",
@@ -110,7 +107,6 @@ socket.on("chatMessage", async (data, callback) => {
     })
     .lean();
 
-  // Add historical flag
   fullMessage.isHistorical = false;
   
   io.to(data.roomId).emit("newMessage", fullMessage);

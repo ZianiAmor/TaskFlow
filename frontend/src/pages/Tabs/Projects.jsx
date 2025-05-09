@@ -81,6 +81,7 @@ const Stopwatch = forwardRef(({ initialTime = 0 }, ref) => {
 const Project = () => {
   const [projects, setProjects] = useState([]);
   const [noteInputs, setNoteInputs] = useState({});
+  const [isDeleting, setIsDeleting] = useState(false);
   const stopwatchRefs = useRef({});
 
   useEffect(() => {
@@ -177,9 +178,9 @@ const Project = () => {
 
   const updateNoteInput = (projectId, field, value, noteIndex = null) => {
     setNoteInputs((prev) => {
-      const projectInputs = prev[projectId] || { newNoteHeader: "", newComment: {} }; // so the projectInput would have the previous state of a the note section or we end up with an initialization
+      const projectInputs = prev[projectId] || { newNoteHeader: "", newComment: {} };
       if (field === "newNoteHeader") {
-        return { ...prev, [projectId]/*to access a specidic project in the object*/ : { ...projectInputs, newNoteHeader: value /*update the content of the targeted project */} };
+        return { ...prev, [projectId]: { ...projectInputs, newNoteHeader: value } };
       } else if (field === "newComment") {
         const updatedComments = { ...projectInputs.newComment, [noteIndex]: value };
         return { ...prev, [projectId]: { ...projectInputs, newComment: updatedComments } };
@@ -194,7 +195,7 @@ const Project = () => {
     setProjects((prev) =>
       prev.map((project) => {
         if (project._id === projectId) {
-          const updatedNotes = project.notes ?/*whether the notes array of the targeted project is null or not */ [...project.notes, { header, comments: [] }] : [{ header, comments: [] }]; // handeling the 2 cases , if there is already headers and we want to add one or just create the first header
+          const updatedNotes = project.notes ? [...project.notes, { header, comments: [] }] : [{ header, comments: [] }];
           return { ...project, notes: updatedNotes };
         }
         return project;
@@ -248,6 +249,80 @@ const Project = () => {
         return project;
       })
     );
+  };
+
+  // Delete note from database
+  const handleDeleteNote = async (projectId, noteIndex) => {
+    if (!window.confirm("Are you sure you want to delete this note and all its comments? This action cannot be undone.")) {
+      return;
+    }
+    
+    setIsDeleting(true);
+    try {
+      // Get the current project and extract the note we're deleting
+      const project = projects.find((p) => p._id === projectId);
+      if (!project || !project.notes || !project.notes[noteIndex]) {
+        throw new Error("Note not found");
+      }
+
+      // Make API call to delete the note
+      await axiosInstance.delete(`/api/tasks/${projectId}/notes/${noteIndex}`);
+      
+      // Update local state after successful deletion
+      setProjects((prev) =>
+        prev.map((project) => {
+          if (project._id === projectId && project.notes) {
+            const updatedNotes = project.notes.filter((_, idx) => idx !== noteIndex);
+            return { ...project, notes: updatedNotes };
+          }
+          return project;
+        })
+      );
+      
+      alert("Note deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting note:", error);
+      alert("Error deleting note. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Delete comment from database
+  const handleDeleteComment = async (projectId, noteIndex, commentIndex) => {
+    if (!window.confirm("Are you sure you want to delete this comment? This action cannot be undone.")) {
+      return;
+    }
+    
+    setIsDeleting(true);
+    try {
+      // Make API call to delete the comment
+      await axiosInstance.delete(`/api/tasks/${projectId}/notes/${noteIndex}/comments/${commentIndex}`);
+      
+      // Update local state after successful deletion
+      setProjects((prev) =>
+        prev.map((project) => {
+          if (project._id === projectId && project.notes && project.notes[noteIndex]) {
+            const updatedNotes = project.notes.map((note, idx) => {
+              if (idx === noteIndex) {
+                const updatedComments = note.comments.filter((_, cIdx) => cIdx !== commentIndex);
+                return { ...note, comments: updatedComments };
+              }
+              return note;
+            });
+            return { ...project, notes: updatedNotes };
+          }
+          return project;
+        })
+      );
+      
+      alert("Comment deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      alert("Error deleting comment. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleSaveNotes = async (projectId) => {
@@ -315,11 +390,29 @@ const Project = () => {
                 {project.notes &&
                   project.notes.map((note, noteIndex) => (
                     <div key={noteIndex} className="note">
-                      <h4>{note.header}</h4>
+                      <div className="note-header">
+                        <h4>{note.header}</h4>
+                        <button 
+                          className="btn btn-danger delete-btn"
+                          onClick={() => handleDeleteNote(project._id, noteIndex)}
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? "Deleting..." : "Delete Note"}
+                        </button>
+                      </div>
                       {note.comments &&
                         note.comments.map((comment, commentIndex) => (
                           <div key={commentIndex} className="comment">
-                            <p>{comment.text}</p>
+                            <div className="comment-content">
+                              <p>{comment.text}</p>
+                              <button 
+                                className="btn btn-danger delete-btn delete-comment-btn"
+                                onClick={() => handleDeleteComment(project._id, noteIndex, commentIndex)}
+                                disabled={isDeleting}
+                              >
+                                {isDeleting ? "..." : "Delete"}
+                              </button>
+                            </div>
                             <div className="attachments">
                               {comment.attachments &&
                                 comment.attachments.map((att, idx) => (

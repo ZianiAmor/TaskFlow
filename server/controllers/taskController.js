@@ -1,7 +1,83 @@
 // server/controllers/taskController.js
 import Task from '../models/Task.js';
 
-// server/controllers/taskController.js
+// First, let's add the deleteNote controller function to taskController.js
+
+// Add this to taskController.js
+const deleteNote = async (req, res) => {
+  try {
+    const { id, noteIndex } = req.params;
+    
+    // Find the task by ID
+    const task = await Task.findById(id);
+    if (!task) {
+      return res.status(404).json({ success: false, error: 'Task not found' });
+    }
+    
+    // Check if the task belongs to the current user
+    if (task.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, error: 'Not authorized to access this task' });
+    }
+    
+    // Check if the note exists
+    if (!task.notes || !task.notes[noteIndex]) {
+      return res.status(404).json({ success: false, error: 'Note not found' });
+    }
+    
+    // Remove the note at the specified index
+    task.notes.splice(noteIndex, 1);
+    
+    // Save the updated task
+    await task.save();
+    
+    res.status(200).json({ success: true, message: 'Note deleted successfully', task });
+  } catch (error) {
+    console.error('Error in deleteNote:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+};
+
+// Add this to taskController.js
+const deleteComment = async (req, res) => {
+  try {
+    const { id, noteIndex, commentIndex } = req.params;
+    
+    // Find the task by ID
+    const task = await Task.findById(id);
+    if (!task) {
+      return res.status(404).json({ success: false, error: 'Task not found' });
+    }
+    
+    // Check if the task belongs to the current user
+    if (task.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, error: 'Not authorized to access this task' });
+    }
+    
+    // Check if the note exists
+    if (!task.notes || !task.notes[noteIndex]) {
+      return res.status(404).json({ success: false, error: 'Note not found' });
+    }
+    
+    // Check if the comment exists
+    if (!task.notes[noteIndex].comments || !task.notes[noteIndex].comments[commentIndex]) {
+      return res.status(404).json({ success: false, error: 'Comment not found' });
+    }
+    
+    // Remove the comment at the specified index
+    task.notes[noteIndex].comments.splice(commentIndex, 1);
+    
+    // Save the updated task
+    await task.save();
+    
+    res.status(200).json({ success: true, message: 'Comment deleted successfully', task });
+  } catch (error) {
+    console.error('Error in deleteComment:', error);
+    res.status(500).json({ success: false, error: 'Server error' });
+  }
+};
+
+// Export the new functions (add these to the existing export statement)
+
 const createTask = async (req, res) => {
   try {
     const { name, deadline, duration, isProject } = req.body;
@@ -254,4 +330,14 @@ const saveProgress = async (req, res) => {
   }
 };
 
-export { getLatestTask ,createTask, getTasks, getProjectTasks, updateTask, deleteTask, saveProgress };
+export { 
+  getLatestTask,
+  createTask, 
+  getTasks, 
+  getProjectTasks, 
+  updateTask, 
+  deleteTask, 
+  saveProgress,
+  deleteNote,
+  deleteComment 
+};

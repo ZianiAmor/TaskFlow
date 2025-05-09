@@ -7,7 +7,6 @@ const ChatRoomSchema = new mongoose.Schema(
     participants: [
       { type: mongoose.Schema.Types.ObjectId, ref: "User" }
     ],
-    // Optional field to track invited usernames
     invitedUsernames: [String],
   },
   { timestamps: true }

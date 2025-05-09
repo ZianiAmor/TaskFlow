@@ -57,10 +57,8 @@ export default function Tasks() {
 
   const handleComplete = async (taskId) => {
   try {
-    // Mark the task as complete (if needed for stats)
     await axiosInstance.patch(`/api/tasks/${taskId}`, { completed: true });
-    // Delete the task from the database
-    // Update local state
+    
     setTasks(tasks.filter(task => task._id !== taskId));
     toast.success("Task completed and removed successfully!");
   } catch (error) {

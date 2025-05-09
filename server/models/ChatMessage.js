@@ -3,11 +3,10 @@ import mongoose from "mongoose";
 
 const ChatMessageSchema = new mongoose.Schema(
   {
-    room: { type: mongoose.Schema.Types.ObjectId, ref: "ChatRoom", required: true ,      index: true // Add index for faster queries
+    room: { type: mongoose.Schema.Types.ObjectId, ref: "ChatRoom", required: true ,      index: true 
     },
     sender: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     text: { type: String },
-    // Optional project snapshot if a project is attached
     project: {
       id: { type: mongoose.Schema.Types.ObjectId, ref: "Task" },
       name: { type: String },

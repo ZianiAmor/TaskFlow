@@ -279,7 +279,6 @@ const Me = () => {
         </div>
       )}
       
-      {/* Monthly Performance */}
       <div className="mt-8">
         <h2 className="text-2xl font-bold mb-4">Monthly Performance</h2>
         <div className="bg-white p-6 rounded-lg shadow-md">
