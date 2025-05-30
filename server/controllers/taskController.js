@@ -1,33 +1,26 @@
 // server/controllers/taskController.js
 import Task from '../models/Task.js';
 
-// First, let's add the deleteNote controller function to taskController.js
 
-// Add this to taskController.js
 const deleteNote = async (req, res) => {
   try {
     const { id, noteIndex } = req.params;
     
-    // Find the task by ID
     const task = await Task.findById(id);
     if (!task) {
       return res.status(404).json({ success: false, error: 'Task not found' });
     }
     
-    // Check if the task belongs to the current user
     if (task.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({ success: false, error: 'Not authorized to access this task' });
     }
     
-    // Check if the note exists
     if (!task.notes || !task.notes[noteIndex]) {
       return res.status(404).json({ success: false, error: 'Note not found' });
     }
     
-    // Remove the note at the specified index
     task.notes.splice(noteIndex, 1);
     
-    // Save the updated task
     await task.save();
     
     res.status(200).json({ success: true, message: 'Note deleted successfully', task });
@@ -48,25 +41,20 @@ const deleteComment = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Task not found' });
     }
     
-    // Check if the task belongs to the current user
     if (task.user.toString() !== req.user._id.toString()) {
       return res.status(403).json({ success: false, error: 'Not authorized to access this task' });
     }
     
-    // Check if the note exists
     if (!task.notes || !task.notes[noteIndex]) {
       return res.status(404).json({ success: false, error: 'Note not found' });
     }
     
-    // Check if the comment exists
     if (!task.notes[noteIndex].comments || !task.notes[noteIndex].comments[commentIndex]) {
       return res.status(404).json({ success: false, error: 'Comment not found' });
     }
     
-    // Remove the comment at the specified index
     task.notes[noteIndex].comments.splice(commentIndex, 1);
     
-    // Save the updated task
     await task.save();
     
     res.status(200).json({ success: true, message: 'Comment deleted successfully', task });
@@ -76,7 +64,6 @@ const deleteComment = async (req, res) => {
   }
 };
 
-// Export the new functions (add these to the existing export statement)
 
 const createTask = async (req, res) => {
   try {
@@ -99,16 +86,12 @@ const createTask = async (req, res) => {
     
     const durationNum = Number(duration);
     const now = new Date();
-    // Calculate time until deadline in hours
     const timeUntilDeadline = (parsedDeadline - now) / (1000 * 3600);
     
-    // Compute priority using the given formula
     const computedPriority = (durationNum * 4 + timeUntilDeadline) / 5;
     
-    // Promote as a project if duration > 10 or if manually marked
     const promoteAsProject = durationNum > 10 || isProject;
     
-    // Get the most up-to-date statistics
     const latestStats = await Task.findOne(
       { user: req.user._id }, 
       { totalNumOfTasks: 1, tasksCompleted: 1, projectsCompleted: 1 },
@@ -121,7 +104,6 @@ const createTask = async (req, res) => {
       projectsCompleted: latestStats?.projectsCompleted || 0
     };
     
-    // Update ALL existing task documents with new totalNumOfTasks
     if (latestStats) {
       await Task.updateMany(
         { user: req.user._id },
@@ -129,7 +111,6 @@ const createTask = async (req, res) => {
       );
     }
     
-    // Create new task with updated stats
     const newTask = new Task({
       user: req.user._id,
       name,
@@ -164,10 +145,8 @@ const getTasks = async (req, res) => {
   }
 };
 
-// New function: getProjectTasks returns tasks where isProject is true.
 const getProjectTasks = async (req, res) => {
   try {
-    // Also sort project tasks by priority (lowest first)
     const projects = await Task.find({ user: req.user._id, isProject: true ,completed : false }).sort({ priority: 1 });
     res.status(200).json(projects);
   } catch (error) {
@@ -185,9 +164,7 @@ const updateTask = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Task not found' });
     }
     
-    // If we're marking the task as completed
     if (req.body.completed === true && !task.completed) {
-      // Get the most up-to-date statistics
       const latestStats = await Task.findOne(
         { user: req.user._id }, 
         { totalNumOfTasks: 1, tasksCompleted: 1, projectsCompleted: 1 },
@@ -200,14 +177,12 @@ const updateTask = async (req, res) => {
         projectsCompleted: latestStats?.projectsCompleted || 0
       };
       
-      // Update completion counts based on task type
       if (task.isProject) {
         updatedStats.projectsCompleted += 1;
       } else {
         updatedStats.tasksCompleted += 1;
       }
       
-      // Update ALL task documents for this user with the new statistics
       await Task.updateMany(
         { user: req.user._id },
         { 
@@ -218,7 +193,6 @@ const updateTask = async (req, res) => {
       );
     }
     
-    // Now update the specific task with the changes from req.body
     const updatedTask = await Task.findByIdAndUpdate(id, req.body, { new: true });
     res.status(200).json(updatedTask);
   } catch (error) {
@@ -229,7 +203,6 @@ const updateTask = async (req, res) => {
 
 const getLatestTask = async (req, res) => {
   try {
-    // Get the latest task for this user to get current stats
     const latestTask = await Task.findOne(
       { user: req.user._id },
       { totalNumOfTasks: 1, tasksCompleted: 1, projectsCompleted: 1 },
@@ -255,13 +228,11 @@ const deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Get the task before deleting it
     const task = await Task.findById(id);
     if (!task) {
       return res.status(404).json({ success: false, error: 'Task not found' });
     }
     
-    // Get the most up-to-date statistics
     const latestStats = await Task.findOne(
       { user: req.user._id }, 
       { totalNumOfTasks: 1, tasksCompleted: 1, projectsCompleted: 1 },
@@ -274,7 +245,6 @@ const deleteTask = async (req, res) => {
       projectsCompleted: latestStats?.projectsCompleted || 0
     };
     
-    // If the task was completed, also decrement the completion counter
     if (task.completed) {
       if (task.isProject) {
         updatedStats.projectsCompleted = Math.max(0, updatedStats.projectsCompleted - 1);
@@ -283,7 +253,6 @@ const deleteTask = async (req, res) => {
       }
     }
     
-    // Update ALL task documents for this user with the new statistics
     await Task.updateMany(
       { user: req.user._id },
       updatedStats

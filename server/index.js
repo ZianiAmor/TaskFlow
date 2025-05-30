@@ -1,3 +1,4 @@
+//index.js
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
@@ -124,6 +125,7 @@ socket.on("chatMessage", async (data, callback) => {
 
 const startServer = async () => {
   await connectMongoDB();
+  import('./utils/checkDeadlines.js');
   const pubClient = await createRedisClient();
   const subClient = pubClient.duplicate();
   await subClient.connect();
